@@ -1,0 +1,135 @@
+<!-- pages/order/result.axml -->
+<view class="page">
+  <!-- 加载状态 -->
+  <view class="loading-container" a:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 成功状态 -->
+  <block a:if="{{!loading && status === 'success'}}">
+    <view class="result-container">
+      <view class="result-icon success">
+        <text class="iconfont">&#xe60d;</text>
+      </view>
+      <text class="result-title">订单支付成功</text>
+      <text class="result-desc">我们将尽快为您安排发货</text>
+      
+      <!-- 订单信息卡片 -->
+      <view class="order-card card" a:if="{{orderInfo}}">
+        <view class="order-header">
+          <text class="order-no">订单号：{{orderInfo.id}}</text>
+          <text class="order-status paid">已支付</text>
+        </view>
+        
+        <view class="device-info">
+          <image class="device-image" src="{{orderInfo.deviceImage}}" mode="aspectFill" />
+          <view class="device-detail">
+            <text class="device-name">{{orderInfo.deviceName}}</text>
+            <text class="rental-date">{{orderInfo.startDate}} 至 {{orderInfo.endDate}}（{{orderInfo.rentalDays}}天）</text>
+          </view>
+        </view>
+        
+        <view class="fee-summary">
+          <view class="fee-row">
+            <text>租金</text>
+            <text>¥{{orderInfo.rentalFee}}</text>
+          </view>
+          <view class="fee-row" a:if="{{orderInfo.deposit > 0}}">
+            <text>押金</text>
+            <text>¥{{orderInfo.deposit}}</text>
+          </view>
+          <view class="fee-row" a:if="{{orderInfo.deposit === 0}}">
+            <text>押金</text>
+            <text class="free-text">免押金</text>
+          </view>
+          <view class="fee-total">
+            <text>实付金额</text>
+            <text class="total-amount">¥{{orderInfo.totalAmount}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="btn btn-secondary" onTap="onViewOrder">查看订单</button>
+        <button class="btn btn-primary" onTap="onBackHome">返回首页</button>
+      </view>
+    </view>
+  </block>
+
+  <!-- 失败状态 -->
+  <block a:if="{{!loading && status === 'fail'}}">
+    <view class="result-container">
+      <view class="result-icon fail">
+        <text class="iconfont">&#xe60e;</text>
+      </view>
+      <text class="result-title">支付失败</text>
+      <text class="result-desc">订单支付未完成，请重新尝试</text>
+      
+      <!-- 订单信息卡片 -->
+      <view class="order-card card" a:if="{{orderInfo}}">
+        <view class="order-header">
+          <text class="order-no">订单号：{{orderInfo.id}}</text>
+          <text class="order-status unpaid">待支付</text>
+        </view>
+        
+        <view class="device-info">
+          <image class="device-image" src="{{orderInfo.deviceImage}}" mode="aspectFill" />
+          <view class="device-detail">
+            <text class="device-name">{{orderInfo.deviceName}}</text>
+            <text class="rental-date">{{orderInfo.startDate}} 至 {{orderInfo.endDate}}（{{orderInfo.rentalDays}}天）</text>
+          </view>
+        </view>
+        
+        <view class="fee-summary">
+          <view class="fee-total">
+            <text>待付金额</text>
+            <text class="total-amount">¥{{orderInfo.totalAmount}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="btn btn-secondary" onTap="onCancelOrder">取消订单</button>
+        <button class="btn btn-primary" onTap="onRepay">重新支付</button>
+      </view>
+      
+      <view class="contact-service" onTap="onContactService">
+        <text>遇到问题？联系客服</text>
+      </view>
+    </view>
+  </block>
+
+  <!-- 取消状态 -->
+  <block a:if="{{!loading && status === 'cancel'}}">
+    <view class="result-container">
+      <view class="result-icon cancel">
+        <text class="iconfont">&#xe60f;</text>
+      </view>
+      <text class="result-title">支付已取消</text>
+      <text class="result-desc">您已取消支付，订单将保留一段时间</text>
+      
+      <!-- 订单信息卡片 -->
+      <view class="order-card card" a:if="{{orderInfo}}">
+        <view class="order-header">
+          <text class="order-no">订单号：{{orderInfo.id}}</text>
+          <text class="order-status unpaid">待支付</text>
+        </view>
+        
+        <view class="fee-summary">
+          <view class="fee-total">
+            <text>待付金额</text>
+            <text class="total-amount">¥{{orderInfo.totalAmount}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 操作按钮 -->
+      <view class="action-buttons">
+        <button class="btn btn-secondary" onTap="onCancelOrder">取消订单</button>
+        <button class="btn btn-primary" onTap="onRepay">继续支付</button>
+      </view>
+    </view>
+  </block>
+</view>

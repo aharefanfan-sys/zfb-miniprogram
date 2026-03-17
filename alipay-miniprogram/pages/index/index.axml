@@ -1,0 +1,108 @@
+<!-- pages/index/index.axml -->
+<view class="container">
+  <!-- 顶部搜索栏 -->
+  <view class="search-bar">
+    <view class="search-input-box">
+      <text class="iconfont icon-search">&#xe6e4;</text>
+      <input 
+        class="search-input" 
+        placeholder="搜索相机、镜头、无人机" 
+        placeholder-class="placeholder"
+        onInput="onSearchInput"
+      />
+    </view>
+  </view>
+
+  <!-- 轮播图 -->
+  <swiper class="banner" indicator-dots="true" autoplay="true" interval="5000" duration="500">
+    <swiper-item a:for="{{bannerList}}" a:key="id">
+      <image class="banner-image" src="{{item.image}}" mode="aspectFill" />
+    </swiper-item>
+  </swiper>
+
+  <!-- 分类标签 -->
+  <view class="category-section">
+    <scroll-view class="category-scroll" scroll-x="true">
+      <view 
+        class="category-item {{currentCategory === item.id ? 'active' : ''}}" 
+        a:for="{{categories}}" 
+        a:key="id"
+        data-id="{{item.id}}"
+        onTap="onCategoryTap"
+      >
+        {{item.name}}
+      </view>
+    </scroll-view>
+  </view>
+
+  <!-- 设备列表 -->
+  <view class="device-list">
+    <view 
+      class="device-card" 
+      a:for="{{devices}}" 
+      a:key="id"
+      data-id="{{item.id}}"
+      onTap="onDeviceTap"
+    >
+      <!-- 设备图片 -->
+      <view class="device-image-wrap">
+        <image class="device-image" src="{{item.image}}" mode="aspectFill" />
+        <view class="device-tags" a:if="{{item.tags && item.tags.length > 0}}">
+          <text class="tag tag-primary" a:for="{{item.tags}}" a:for-item="tag" a:for-index="tagIndex" a:key="tagIndex">{{tag}}</text>
+        </view>
+      </view>
+
+      <!-- 设备信息 -->
+      <view class="device-info">
+        <view class="device-name ellipsis">{{item.name}}</view>
+        <view class="device-desc ellipsis">{{item.description}}</view>
+        
+        <view class="device-price-row">
+          <view class="price-wrap">
+            <text class="price">
+              <text class="price-symbol">¥</text>
+              <text class="price-value">{{item.price}}</text>
+            </text>
+            <text class="price-unit">/天</text>
+          </view>
+          <view class="deposit-info" a:if="{{item.useZmxy}}">
+            <text class="zmxy-badge">芝麻信用免押金</text>
+          </view>
+          <view class="deposit-info" a:else>
+            <text class="deposit-text">押金 ¥{{item.deposit}}</text>
+          </view>
+        </view>
+
+        <view class="device-stock">
+          <text class="stock-text {{item.stock < 3 ? 'text-danger' : 'text-gray'}}">库存 {{item.stock}} 台</text>
+        </view>
+
+        <!-- 立即租赁按钮 -->
+        <button 
+          class="rent-btn btn btn-primary" 
+          data-id="{{item.id}}"
+          onTap="onRentTap"
+          disabled="{{item.stock === 0}}"
+        >
+          {{item.stock === 0 ? '暂时缺货' : '立即租赁'}}
+        </button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 加载状态 -->
+  <view class="loading" a:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 没有更多 -->
+  <view class="no-more" a:if="{{!hasMore && devices.length > 0}}">
+    <text>—— 已经到底了 ——</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-state" a:if="{{!loading && devices.length === 0}}">
+    <image class="empty-icon" src="/images/empty.png" mode="aspectFit" />
+    <text class="empty-text">暂无相关设备</text>
+  </view>
+</view>

@@ -1,0 +1,139 @@
+<!-- pages/device/detail.axml -->
+<view class="page" a:if="{{!loading}}">
+  <!-- 顶部导航栏占位 -->
+  <view class="nav-placeholder"></view>
+
+  <!-- 图片轮播 -->
+  <view class="image-section">
+    <swiper 
+      class="image-swiper" 
+      indicator-dots="true" 
+      autoplay="true" 
+      interval="5000"
+      circular="true"
+      onChange="onImageChange"
+    >
+      <swiper-item a:for="{{device.images}}" a:key="*this">
+        <image 
+          class="device-image" 
+          src="{{item}}" 
+          mode="aspectFill"
+          onTap="onImagePreview"
+          data-index="{{index}}"
+        />
+      </swiper-item>
+    </swiper>
+    <view class="image-indicator">{{currentImageIndex + 1}}/{{device.images.length}}</view>
+  </view>
+
+  <!-- 设备基本信息 -->
+  <view class="info-section card">
+    <view class="title-row">
+      <text class="device-name">{{device.name}}</text>
+      <view class="favorite-btn {{isFavorite ? 'active' : ''}}" onTap="onFavoriteTap">
+        <text class="iconfont">{{isFavorite ? '&#xe60a;' : '&#xe60b;'}}</text>
+      </view>
+    </view>
+    
+    <view class="tags-row" a:if="{{device.tags && device.tags.length > 0}}">
+      <text class="tag {{item === '免押金' ? 'tag-primary' : 'tag-warning'}}" a:for="{{device.tags}}" a:for-item="tag" a:key="*this">{{tag}}</text>
+    </view>
+
+    <view class="price-section">
+      <view class="main-price">
+        <text class="price-symbol">¥</text>
+        <text class="price-value">{{device.price}}</text>
+        <text class="price-unit">/天</text>
+      </view>
+      <view class="deposit-section">
+        <block a:if="{{device.useZmxy}}">
+          <text class="zmxy-badge">芝麻信用免押金</text>
+        </block>
+        <block a:else>
+          <text class="deposit-text">押金 ¥{{device.deposit}}</text>
+        </block>
+      </view>
+    </view>
+
+    <view class="stock-info">
+      <text class="stock-label">库存</text>
+      <text class="stock-value {{device.stock < 3 ? 'text-danger' : ''}}">{{device.stock}} 台</text>
+    </view>
+  </view>
+
+  <!-- 设备描述 -->
+  <view class="description-section card">
+    <view class="section-title">设备介绍</view>
+    <text class="description-text">{{device.description}}</text>
+  </view>
+
+  <!-- 规格参数 -->
+  <view class="specs-section card" a:if="{{specifications.length > 0}}">
+    <view class="section-title">规格参数</view>
+    <view class="specs-list">
+      <view class="spec-item" a:for="{{specifications}}" a:key="name">
+        <text class="spec-name">{{item.name}}</text>
+        <text class="spec-value">{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 配件清单 -->
+  <view class="accessories-section card" a:if="{{device.accessories && device.accessories.length > 0}}">
+    <view class="section-title">配件清单</view>
+    <view class="accessories-list">
+      <view class="accessory-item" a:for="{{device.accessories}}" a:key="*this">
+        <text class="accessory-dot">•</text>
+        <text class="accessory-name">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 租赁规则 -->
+  <view class="rules-section card" a:if="{{device.rentalRules && device.rentalRules.length > 0}}">
+    <view class="section-title">租赁规则</view>
+    <view class="rules-list">
+      <view class="rule-item" a:for="{{device.rentalRules}}" a:key="*this">
+        <text class="rule-number">{{index + 1}}.</text>
+        <text class="rule-text">{{item}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部占位 -->
+  <view class="bottom-placeholder"></view>
+
+  <!-- 底部操作栏 -->
+  <view class="bottom-bar">
+    <view class="action-btns">
+      <view class="action-btn" onTap="onHomeTap">
+        <text class="iconfont">&#xe6e0;</text>
+        <text class="action-text">首页</text>
+      </view>
+      <view class="action-btn" onTap="onContactTap">
+        <text class="iconfont">&#xe6e1;</text>
+        <text class="action-text">客服</text>
+      </view>
+    </view>
+    <view class="rent-btn-wrap">
+      <button 
+        class="rent-btn btn btn-primary" 
+        onTap="onRentTap"
+        disabled="{{device.stock === 0}}"
+      >
+        <block a:if="{{device.stock === 0}}">
+          <text>暂时缺货</text>
+        </block>
+        <block a:else>
+          <text>立即租赁</text>
+          <text class="rent-price"> ¥{{device.price}}/天起</text>
+        </block>
+      </button>
+    </view>
+  </view>
+</view>
+
+<!-- 加载状态 -->
+<view class="loading-container" a:if="{{loading}}">
+  <text>加载中...</text>
+</view>

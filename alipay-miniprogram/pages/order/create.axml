@@ -1,0 +1,168 @@
+<!-- pages/order/create.axml -->
+<view class="page">
+  <!-- 加载状态 -->
+  <view class="loading-container" a:if="{{loading}}">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 主内容 -->
+  <block a:if="{{!loading && device}}">
+    <!-- 设备信息卡片 -->
+    <view class="device-card card">
+      <image class="device-image" src="{{device.image}}" mode="aspectFill" />
+      <view class="device-info">
+        <text class="device-name">{{device.name}}</text>
+        <view class="device-price">
+          <text class="price">¥{{device.price}}</text>
+          <text class="unit">/天</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 芝麻信用授权 -->
+    <view class="zmxy-card card" a:if="{{device.useZmxy}}">
+      <view class="zmxy-header">
+        <view class="zmxy-title">
+          <text class="iconfont zmxy-icon">&#xe60c;</text>
+          <text>芝麻信用免押</text>
+        </view>
+        <block a:if="{{zmxyAuthorized}}">
+          <view class="zmxy-status success">
+            <text class="iconfont">&#xe60d;</text>
+            <text>已授权</text>
+          </view>
+        </block>
+      </view>
+      
+      <block a:if="{{!zmxyAuthorized}}">
+        <view class="zmxy-content">
+          <text class="zmxy-desc">芝麻信用分 ≥ 650 可免押金租赁，授权后押金¥{{device.deposit}}将免除</text>
+          <button 
+            class="zmxy-btn btn btn-primary" 
+            onTap="onZmxyAuth"
+            loading="{{zmxyLoading}}"
+          >
+            授权芝麻信用
+          </button>
+        </view>
+      </block>
+      
+      <block a:if="{{zmxyAuthorized}}">
+        <view class="zmxy-content">
+          <text class="zmxy-score">您的芝麻信用分: {{zmxyScore}}</text>
+          <text class="zmxy-benefit">已为您免除押金 ¥{{device.deposit}}</text>
+        </view>
+      </block>
+    </view>
+
+    <!-- 租赁日期 -->
+    <view class="date-card card">
+      <view class="section-title">租赁日期</view>
+      <view class="date-picker-row">
+        <view class="date-picker">
+          <text class="date-label">取货日期</text>
+          <picker mode="date" value="{{startDate}}" start="{{minDate}}" end="{{maxDate}}" onChange="onStartDateChange">
+            <view class="date-value">
+              <text>{{startDate}}</text>
+              <text class="iconfont">&#xe6e5;</text>
+            </view>
+          </picker>
+        </view>
+        <view class="date-arrow">
+          <text class="iconfont">&#xe6e6;</text>
+        </view>
+        <view class="date-picker">
+          <text class="date-label">归还日期</text>
+          <picker mode="date" value="{{endDate}}" start="{{startDate}}" end="{{maxDate}}" onChange="onEndDateChange">
+            <view class="date-value">
+              <text>{{endDate}}</text>
+              <text class="iconfont">&#xe6e5;</text>
+            </view>
+          </picker>
+        </view>
+      </view>
+      <view class="rental-days">
+        <text>共租赁 {{rentalDays}} 天</text>
+      </view>
+    </view>
+
+    <!-- 收货地址 -->
+    <view class="address-card card">
+      <view class="section-title">收货地址</view>
+      <block a:if="{{address}}">
+        <view class="address-info" onTap="onChooseAddress">
+          <view class="address-row">
+            <text class="address-name">{{address.name}}</text>
+            <text class="address-phone">{{address.phone}}</text>
+          </view>
+          <text class="address-detail">{{address.fullAddress}}</text>
+          <text class="iconfont address-arrow">&#xe6e5;</text>
+        </view>
+      </block>
+      <block a:else>
+        <view class="address-empty" onTap="onChooseAddress">
+          <text class="iconfont add-icon">&#xe6e7;</text>
+          <text>请选择收货地址</text>
+          <text class="iconfont address-arrow">&#xe6e5;</text>
+        </view>
+      </block>
+    </view>
+
+    <!-- 备注 -->
+    <view class="remark-card card">
+      <view class="section-title">订单备注</view>
+      <textarea 
+        class="remark-input" 
+        placeholder="请输入备注信息（选填）" 
+        value="{{remark}}"
+        onInput="onRemarkInput"
+        maxlength="200"
+      />
+    </view>
+
+    <!-- 费用明细 -->
+    <view class="fee-card card">
+      <view class="section-title">费用明细</view>
+      <view class="fee-item">
+        <text>租金（{{rentalDays}}天）</text>
+        <text>¥{{rentalFee}}</text>
+      </view>
+      <view class="fee-item">
+        <text>押金</text>
+        <block a:if="{{deposit === 0}}">
+          <text class="fee-free">免押金</text>
+        </block>
+        <block a:else>
+          <text>¥{{deposit}}</text>
+        </block>
+      </view>
+      <view class="fee-divider"></view>
+      <view class="fee-total">
+        <text>合计</text>
+        <text class="total-amount">¥{{totalAmount}}</text>
+      </view>
+    </view>
+
+    <!-- 协议 -->
+    <view class="agreement-section">
+      <checkbox onChange="onAgreementChange" checked="{{agreementChecked}}" />
+      <text class="agreement-text">我已阅读并同意</text>
+      <text class="agreement-link" onTap="onViewAgreement">《租赁服务协议》</text>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-placeholder"></view>
+
+    <!-- 底部提交栏 -->
+    <view class="bottom-bar">
+      <view class="total-wrap">
+        <text class="total-label">合计：</text>
+        <text class="total-symbol">¥</text>
+        <text class="total-value">{{totalAmount}}</text>
+      </view>
+      <button class="submit-btn btn btn-primary" onTap="onSubmitOrder">
+        提交订单
+      </button>
+    </view>
+  </block>
+</view>

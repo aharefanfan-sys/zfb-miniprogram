@@ -1,0 +1,326 @@
+/* pages/device/detail.acss */
+
+.page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.nav-placeholder {
+  height: 0;
+}
+
+/* 图片区域 */
+.image-section {
+  position: relative;
+  background: #fff;
+}
+
+.image-swiper {
+  height: 600rpx;
+}
+
+.device-image {
+  width: 100%;
+  height: 100%;
+}
+
+.image-indicator {
+  position: absolute;
+  right: 30rpx;
+  bottom: 30rpx;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  padding: 8rpx 20rpx;
+  border-radius: 24rpx;
+  font-size: 24rpx;
+}
+
+/* 信息卡片 */
+.info-section {
+  margin: 20rpx;
+}
+
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16rpx;
+}
+
+.device-name {
+  flex: 1;
+  font-size: 36rpx;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.4;
+  margin-right: 20rpx;
+}
+
+.favorite-btn {
+  width: 60rpx;
+  height: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 30rpx;
+}
+
+.favorite-btn .iconfont {
+  font-size: 36rpx;
+  color: #999;
+}
+
+.favorite-btn.active .iconfont {
+  color: #ff4d4f;
+}
+
+.tags-row {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+
+/* 价格区域 */
+.price-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20rpx 0;
+  border-top: 1rpx solid #f0f0f0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.main-price {
+  display: flex;
+  align-items: baseline;
+}
+
+.price-symbol {
+  font-size: 28rpx;
+  color: #ff4d4f;
+  font-weight: bold;
+}
+
+.price-value {
+  font-size: 52rpx;
+  color: #ff4d4f;
+  font-weight: bold;
+  margin: 0 4rpx;
+}
+
+.price-unit {
+  font-size: 26rpx;
+  color: #999;
+}
+
+.zmxy-badge {
+  background: linear-gradient(135deg, #1677FF, #0056D6);
+  color: #fff;
+  padding: 10rpx 20rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.deposit-text {
+  font-size: 26rpx;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.stock-info {
+  display: flex;
+  align-items: center;
+  margin-top: 20rpx;
+}
+
+.stock-label {
+  font-size: 26rpx;
+  color: #666;
+  margin-right: 16rpx;
+}
+
+.stock-value {
+  font-size: 26rpx;
+}
+
+/* 区块标题 */
+.section-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+  padding-left: 16rpx;
+  border-left: 6rpx solid #1677FF;
+}
+
+/* 描述区域 */
+.description-section {
+  margin: 0 20rpx 20rpx;
+}
+
+.description-text {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.8;
+}
+
+/* 规格参数 */
+.specs-section {
+  margin: 0 20rpx 20rpx;
+}
+
+.specs-list {
+  border-top: 1rpx solid #f0f0f0;
+}
+
+.spec-item {
+  display: flex;
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid #f0f0f0;
+}
+
+.spec-name {
+  width: 200rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+.spec-value {
+  flex: 1;
+  font-size: 28rpx;
+  color: #333;
+  text-align: right;
+}
+
+/* 配件清单 */
+.accessories-section {
+  margin: 0 20rpx 20rpx;
+}
+
+.accessories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.accessory-item {
+  display: flex;
+  align-items: center;
+}
+
+.accessory-dot {
+  color: #1677FF;
+  margin-right: 12rpx;
+  font-size: 28rpx;
+}
+
+.accessory-name {
+  font-size: 28rpx;
+  color: #666;
+}
+
+/* 租赁规则 */
+.rules-section {
+  margin: 0 20rpx 20rpx;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.rule-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.rule-number {
+  color: #1677FF;
+  margin-right: 12rpx;
+  font-size: 28rpx;
+  font-weight: bold;
+}
+
+.rule-text {
+  flex: 1;
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 底部占位 */
+.bottom-placeholder {
+  height: 140rpx;
+}
+
+/* 底部操作栏 */
+.bottom-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  box-shadow: 0 -2rpx 10rpx rgba(0, 0, 0, 0.05);
+}
+
+.action-btns {
+  display: flex;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 40rpx;
+}
+
+.action-btn .iconfont {
+  font-size: 40rpx;
+  color: #666;
+  margin-bottom: 4rpx;
+}
+
+.action-text {
+  font-size: 22rpx;
+  color: #666;
+}
+
+.rent-btn-wrap {
+  flex: 1;
+}
+
+.rent-btn {
+  width: 100%;
+  height: 88rpx;
+  line-height: 88rpx;
+  border-radius: 44rpx;
+  font-size: 32rpx;
+  font-weight: 500;
+  margin: 0;
+  padding: 0;
+}
+
+.rent-btn[disabled] {
+  background: #ccc;
+}
+
+.rent-price {
+  font-size: 24rpx;
+  opacity: 0.9;
+}
+
+/* 加载状态 */
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-size: 28rpx;
+  color: #999;
+}

@@ -1,0 +1,45 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/device/detail",
+    "pages/order/create",
+    "pages/order/result",
+    "pages/order/list"
+  ],
+  "window": {
+    "defaultTitle": "相机租赁",
+    "titleBarColor": "#1677FF",
+    "navigationBarTitleText": "相机租赁",
+    "navigationBarBackgroundColor": "#1677FF",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f5",
+    "enableScrollBar": false
+  },
+  "tabBar": {
+    "textColor": "#999999",
+    "selectedColor": "#1677FF",
+    "backgroundColor": "#FFFFFF",
+    "items": [
+      {
+        "pagePath": "pages/index/index",
+        "name": "首页",
+        "icon": "images/home.png",
+        "activeIcon": "images/home-active.png"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "name": "订单",
+        "icon": "images/order.png",
+        "activeIcon": "images/order-active.png"
+      }
+    ]
+  },
+  "lazyLoad": true,
+  "debug": false,
+  "permission": {
+    "scope.userLocation": {
+      "desc": "您的位置信息将用于小程序位置接口的效果展示"
+    }
+  },
+  "usingComponents": {}
+}

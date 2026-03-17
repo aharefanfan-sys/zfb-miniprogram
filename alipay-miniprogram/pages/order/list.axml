@@ -1,0 +1,131 @@
+<!-- pages/order/list.axml -->
+<view class="page">
+  <!-- 未登录状态 -->
+  <view class="login-section" a:if="{{!isLogin}}">
+    <image class="login-icon" src="/images/order-empty.png" mode="aspectFit" />
+    <text class="login-text">登录后查看订单</text>
+    <button class="login-btn btn btn-primary" onTap="onLogin">立即登录</button>
+  </view>
+
+  <!-- 已登录状态 -->
+  <block a:if="{{isLogin}}">
+    <!-- 标签栏 -->
+    <view class="tab-bar">
+      <scroll-view class="tab-scroll" scroll-x="true">
+        <view 
+          class="tab-item {{currentTab === item.id ? 'active' : ''}}" 
+          a:for="{{tabs}}" 
+          a:key="id"
+          data-id="{{item.id}}"
+          onTap="onTabChange"
+        >
+          {{item.name}}
+        </view>
+      </scroll-view>
+    </view>
+
+    <!-- 订单列表 -->
+    <view class="order-list">
+      <view 
+        class="order-card" 
+        a:for="{{orders}}" 
+        a:key="id"
+        data-id="{{item.id}}"
+        data-type="detail"
+        onTap="onOrderAction"
+      >
+        <!-- 订单头部 -->
+        <view class="order-header">
+          <text class="order-no">订单号：{{item.id}}</text>
+          <text class="order-status {{getStatusClass(item.status)}}">{{item.statusText}}</text>
+        </view>
+
+        <!-- 设备信息 -->
+        <view class="device-section">
+          <image class="device-image" src="{{item.deviceImage}}" mode="aspectFill" />
+          <view class="device-info">
+            <text class="device-name">{{item.deviceName}}</text>
+            <text class="rental-info">{{item.startDate}} 至 {{item.endDate}}（{{item.rentalDays}}天）</text>
+            <view class="price-section">
+              <text class="price">¥{{item.totalAmount}}</text>
+              <block a:if="{{item.deposit === 0}}">
+                <text class="deposit-badge">免押金</text>
+              </block>
+            </view>
+          </view>
+        </view>
+
+        <!-- 订单操作 -->
+        <view class="order-actions">
+          <!-- 待支付 -->
+          <block a:if="{{item.status === 'pending'}}">
+            <button 
+              class="action-btn btn-secondary" 
+              size="mini"
+              data-id="{{item.id}}"
+              data-type="cancel"
+              onTap="onOrderAction"
+            >取消订单</button>
+            <button 
+              class="action-btn btn-primary" 
+              size="mini"
+              data-id="{{item.id}}"
+              data-type="pay"
+              onTap="onOrderAction"
+            >立即支付</button>
+          </block>
+
+          <!-- 待收货 -->
+          <block a:if="{{item.status === 'paid'}}">
+            <button 
+              class="action-btn btn-primary" 
+              size="mini"
+              data-id="{{item.id}}"
+              data-type="receive"
+              onTap="onOrderAction"
+            >确认收货</button>
+          </block>
+
+          <!-- 租赁中 -->
+          <block a:if="{{item.status === 'renting'}}">
+            <button 
+              class="action-btn btn-secondary" 
+              size="mini"
+              data-id="{{item.id}}"
+              data-type="return"
+              onTap="onOrderAction"
+            >申请归还</button>
+          </block>
+
+          <!-- 已完成 -->
+          <block a:if="{{item.status === 'completed'}}">
+            <button 
+              class="action-btn btn-secondary" 
+              size="mini"
+              data-id="{{item.id}}"
+              data-type="review"
+              onTap="onOrderAction"
+            >评价</button>
+          </block>
+        </view>
+      </view>
+    </view>
+
+    <!-- 加载状态 -->
+    <view class="loading" a:if="{{loading}}">
+      <text>加载中...</text>
+    </view>
+
+    <!-- 没有更多 -->
+    <view class="no-more" a:if="{{!hasMore && orders.length > 0}}">
+      <text>—— 已经到底了 ——</text>
+    </view>
+
+    <!-- 空状态 -->
+    <view class="empty-state" a:if="{{!loading && orders.length === 0}}">
+      <image class="empty-icon" src="/images/order-empty.png" mode="aspectFit" />
+      <text class="empty-text">暂无相关订单</text>
+      <button class="rent-btn btn btn-primary" onTap="onRentTap">去租赁</button>
+    </view>
+  </block>
+</view>
