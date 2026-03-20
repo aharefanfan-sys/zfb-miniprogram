@@ -48,6 +48,9 @@ pytest tests/test_auth.py::test_login
 - `MINIPROGRAM_APP_ID`、`MINIPROGRAM_APP_SECRET` — 小程序 OAuth 凭证
 - `DATABASE_URL` — 生产环境 PostgreSQL 连接 URL；开发环境自动使用 SQLite
 - `NOTIFY_URL` — 支付宝支付回调的公网 HTTPS 地址
+- `ZHIMA_SERVICE_ID` — 芝麻信用服务ID（开放平台 → 我的服务 → 芝麻信用 → 租赁服务获取）
+- `ZHIMA_CATEGORY` — 业务类目编码
+- `DEPOSIT_PRODUCT_MODE` — 免押模式：`DEPOSIT_ONLY` / `POSTPAY` / `POSTPAY_UNCERTAIN`
 
 ## 架构说明
 
@@ -55,11 +58,11 @@ pytest tests/test_auth.py::test_login
 
 - **`app.py`** — 应用工厂（`create_app()`），注册蓝图、初始化数据库、全局错误处理
 - **`config.py`** — 通过 `FLASK_ENV` 选择 `DevelopmentConfig`/`ProductionConfig`/`TestingConfig`
-- **`models.py`** — SQLAlchemy 模型：`Customer`（用户）、`Device`（设备）、`Order`（订单）
+- **`models.py`** — SQLAlchemy 模型：`Customer`（用户）、`Device`（设备）、`Order`（订单）；Order 含芝麻免押字段：`zhima_order_no`、`complete_status`、`complete_time`、`actual_pay_amount`
 - **`alipay_sdk.py`** — 自定义支付宝 SDK：RSA2 签名、OAuth 换取 token、芝麻信用分查询
 - **`routes/auth.py`** — `/api/auth/` — 支付宝 OAuth 登录、JWT 签发、个人信息、信用查询
 - **`routes/devices.py`** — `/api/devices/` — 设备增删改查、分类列表、基于 Haversine 公式的附近搜索
-- **`routes/orders.py`** — `/api/orders/` — 订单生命周期、发起支付、支付宝异步回调处理
+- **`routes/orders.py`** — `/api/orders/` — 订单生命周期、发起支付、免押授权（`deposit-free-auth`）、订单完结（`complete`）、取消、支付宝异步回调处理
 - **`utils/sync_devices.py`** — 设备数据同步独立脚本
 
 ### 前端（支付宝小程序）
@@ -74,7 +77,7 @@ pytest tests/test_auth.py::test_login
 
 **普通租赁：** 创建订单 → `/api/orders/<id>/pay` → 支付宝支付 → 异步回调 `/api/orders/notify/pay` 更新订单状态。
 
-**免押金（芝麻信用）：** 创建订单时传入 `deposit_free=true` → `/api/orders/<id>/deposit-free-auth` 通过芝麻冻结押金 → 用户支付租金 → 归还完成后 `/api/orders/<id>/unfreeze` 解��押金。
+**免押金（芝麻信用）：** 创建订单时传入 `deposit_free=true` → `POST /api/orders/<id>/deposit-free-auth` 创建芝麻借还订单并冻结押金，返回 `orderStr` → 前端用 `my.tradePay({ orderStr })` 唤起受理台 → 支付宝回调 `/api/orders/notify/auth` 写入 `auth_no`，订���状态变为 `active` → 用户归还后调用 `POST /api/orders/<id>/complete` 触发代扣+芝麻信用闭环。
 
 ### 数据库
 
