@@ -168,7 +168,13 @@ class Order(db.Model):
     auth_no = db.Column(db.String(100), nullable=True, comment='支付宝资金授权单号')
     auth_time = db.Column(db.DateTime, nullable=True, comment='授权时间')
     auth_amount = db.Column(db.Numeric(10, 2), nullable=True, comment='授权金额')
-    
+    zhima_order_no = db.Column(db.String(100), nullable=True, comment='芝麻侧借还订单号')
+
+    # 订单完结信息
+    complete_status = db.Column(db.String(20), nullable=True, comment='完结状态: PROCESSING-处理中, SUCCESS-成功')
+    complete_time = db.Column(db.DateTime, nullable=True, comment='完结时间')
+    actual_pay_amount = db.Column(db.Numeric(10, 2), nullable=True, comment='实际扣款金额')
+
     # 解冻/退款信息
     unfreeze_status = db.Column(db.String(20), nullable=True, comment='解冻状态')
     unfreeze_time = db.Column(db.DateTime, nullable=True, comment='解冻时间')
@@ -203,6 +209,10 @@ class Order(db.Model):
             'auth_no': self.auth_no,
             'auth_time': self.auth_time.isoformat() if self.auth_time else None,
             'auth_amount': float(self.auth_amount) if self.auth_amount else None,
+            'zhima_order_no': self.zhima_order_no,
+            'complete_status': self.complete_status,
+            'complete_time': self.complete_time.isoformat() if self.complete_time else None,
+            'actual_pay_amount': float(self.actual_pay_amount) if self.actual_pay_amount else None,
             'unfreeze_status': self.unfreeze_status,
             'unfreeze_time': self.unfreeze_time.isoformat() if self.unfreeze_time else None,
             'remark': self.remark,

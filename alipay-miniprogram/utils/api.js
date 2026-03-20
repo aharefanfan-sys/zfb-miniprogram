@@ -142,40 +142,34 @@ const deviceApi = {
 // 订单相关
 const orderApi = {
   // 获取订单列表
-  getOrderList: (params) => get('/orders', params),
-  
+  getOrderList: (params) => get('/orders/', params),
+
   // 获取订单详情
   getOrderDetail: (id) => get(`/orders/${id}`),
-  
+
   // 创建订单
-  createOrder: (data) => post('/orders', data),
-  
+  createOrder: (data) => post('/orders/create', data),
+
   // 取消订单
-  cancelOrder: (id) => put(`/orders/${id}/cancel`),
-  
-  // 支付订单
+  cancelOrder: (id) => post(`/orders/${id}/cancel`),
+
+  // 支付订单（普通租赁，返回 trade_no 供 my.tradePay 调用）
   payOrder: (id) => post(`/orders/${id}/pay`),
-  
-  // 确认收货
-  confirmReceive: (id) => put(`/orders/${id}/receive`),
-  
-  // 申请归还
-  applyReturn: (id, data) => post(`/orders/${id}/return`, data),
-  
-  // 评价订单
-  reviewOrder: (id, data) => post(`/orders/${id}/review`, data)
+
+  // 发起免押预授权（返回 orderStr 供 my.tradePay 调用）
+  depositFreeAuth: (id) => post(`/orders/${id}/deposit-free-auth`),
+
+  // 订单完结（免押租赁归还后调用，触发代扣+芝麻信用闭环）
+  completeOrder: (id, data) => post(`/orders/${id}/complete`, data),
+
+  // 解冻押金
+  unfreezeDeposit: (id) => post(`/orders/${id}/unfreeze`)
 };
 
 // 芝麻信用相关
 const zmxyApi = {
-  // 检查芝麻信用授权状态
-  checkZmxyAuth: () => get('/zmxy/status'),
-  
-  // 发起芝麻信用授权
-  zmxyAuth: () => post('/zmxy/auth'),
-  
-  // 查询芝麻信用分
-  getZmxyScore: () => get('/zmxy/score')
+  // 查询芝麻信用分（免押资格评估��
+  checkCredit: () => get('/auth/check-credit')
 };
 
 // 上传相关

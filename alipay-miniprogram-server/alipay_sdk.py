@@ -192,10 +192,9 @@ class AlipaySDK:
     # ==================== 芝麻信用相关 ====================
     
     def zhima_credit_score_brief_get(self, alipay_user_id, transaction_id=None):
-        """获取芝麻信用分"""
+        """获取芝麻信用分（免押资格评估）"""
         biz_content = {
-            'product_code': 'w1010100000000002733',
-            'cert_type': 'IDENTITY_CARD',
+            'product_code': 'w1010100000000002858',
             'alipay_user_id': alipay_user_id
         }
         if transaction_id:
@@ -263,31 +262,35 @@ class AlipaySDK:
     
     # ==================== 免押预授权相关 ====================
     
-    def alipay_fund_auth_order_app_freeze(self, out_order_no, out_request_no, amount, 
-                                          order_title, notify_url=None, return_url=None,
+    def alipay_fund_auth_order_app_freeze(self, out_order_no, out_request_no, amount,
+                                          order_title, deposit_product_mode,
+                                          service_id, category,
+                                          notify_url=None, return_url=None,
                                           payee_user_id=None, pay_timeout=None):
         """
-        资金授权冻结接口
-        用于创建免押订单时冻结押金
+        资金授权冻结接口（小程序免押场景）
+        返回 orderStr，前端用 my.tradePay 唤起免押受理台
         """
         biz_content = {
             'out_order_no': out_order_no,
             'out_request_no': out_request_no,
             'order_title': order_title,
             'amount': str(amount),
-            'product_code': 'PRE_AUTH_ONLINE'
+            'product_code': 'PREAUTH_PAY',
+            'deposit_product_mode': deposit_product_mode,
+            'extra_param': json.dumps({'category': category, 'serviceId': service_id}, ensure_ascii=False)
         }
         if payee_user_id:
             biz_content['payee_user_id'] = payee_user_id
         if pay_timeout:
             biz_content['pay_timeout'] = pay_timeout
-            
+
         params = {}
         if notify_url:
             params['notify_url'] = notify_url
         if return_url:
             params['return_url'] = return_url
-            
+
         return self._request('alipay.fund.auth.order.app.freeze', biz_content, **params)
     
     def alipay_fund_auth_order_freeze(self, out_order_no, out_request_no, amount,
@@ -374,7 +377,71 @@ class AlipaySDK:
             
         return self._request('alipay.fund.auth.order.voucher.create', biz_content, **params)
     
-    # ==================== 回调通知验证 ====================
+    # ==================== 芝麻信用借还订单（租赁专属）====================
+
+    def zhima_merchant_order_rent_create(self, out_order_no, user_id, service_id,
+                                         borrow_time, expiry_time, deposit_amount,
+                                         rent_amount, goods_name):
+        """
+        创建芝麻信用借还订单（租赁必须，步骤3）
+        返回 order_no（芝麻侧订单号），后续完结/取消必须使用
+        """
+        biz_content = {
+            'out_order_no': out_order_no,
+            'user_id': user_id,
+            'service_id': service_id,
+            'borrow_time': borrow_time,
+            'expiry_time': expiry_time,
+            'deposit_amount': str(deposit_amount),
+            'rent_amount': str(rent_amount),
+            'goods_name': goods_name
+        }
+        return self._request('zhima.merchant.order.rent.create', biz_content)
+
+    def zhima_merchant_order_rent_complete(self, order_no, pay_amount,
+                                           restore_time, pay_amount_type='RENT'):
+        """
+        订单完结接口（归还后扣款+信用闭环，一单只能调一次）
+        pay_amount_type: RENT-租金, DAMAGE-赔偿金
+        """
+        biz_content = {
+            'order_no': order_no,
+            'pay_amount': str(pay_amount),
+            'pay_amount_type': pay_amount_type,
+            'restore_time': restore_time
+        }
+        return self._request('zhima.merchant.order.rent.complete', biz_content)
+
+    def zhima_merchant_order_rent_cancel(self, order_no, out_order_no=None):
+        """取消芝麻借还订单，释放信用额度"""
+        biz_content = {'order_no': order_no}
+        if out_order_no:
+            biz_content['out_order_no'] = out_order_no
+        return self._request('zhima.merchant.order.rent.cancel', biz_content)
+
+    def zhima_merchant_single_data_upload(self, order_no, borrow_time, user_id,
+                                          goods_name, status, restore_time=None,
+                                          overdue_time=None, memo=None):
+        """
+        信用数据同步（官方强制，影响用户芝麻分）
+        status: BORROW-借出, RETURN-归还, OVERDUE-逾期, SETTLE-结清, BREACH-违约
+        """
+        biz_content = {
+            'order_no': order_no,
+            'borrow_time': borrow_time,
+            'user_id': user_id,
+            'goods_name': goods_name,
+            'status': status
+        }
+        if restore_time:
+            biz_content['restore_time'] = restore_time
+        if overdue_time:
+            biz_content['overdue_time'] = overdue_time
+        if memo:
+            biz_content['memo'] = memo
+        return self._request('zhima.merchant.single.data.upload', biz_content)
+
+    # ==================== 回调��知验证 ====================
     
     def verify_notify(self, params):
         """验证异步通知签名"""

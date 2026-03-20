@@ -266,66 +266,104 @@ def pay_order(order_id):
 @login_required
 def deposit_free_auth(order_id):
     """
-    发起免押预授权
-    免押场景下冻结押金（不实际扣款）
+    发起免押预授权（步骤3+4）
+    1. 创建芝麻信用借还订单
+    2. 发起资金授权冻结，返回 orderStr 给前端唤起受理台
     """
     customer = request.customer
     order = Order.query.get(order_id)
-    
+
     if not order:
         return jsonify({'success': False, 'message': '订单不存在'}), 404
-    
+
     if order.customer_id != customer.id:
         return jsonify({'success': False, 'message': '无权操作该订单'}), 403
-    
+
     if not order.deposit_free:
         return jsonify({'success': False, 'message': '该订单不是免押订单'}), 400
-    
-    if order.auth_no:
+
+    if order.zhima_order_no:
         return jsonify({'success': False, 'message': '已完成授权，无需重复操作'}), 400
-    
+
     if order.status != 'pending_payment':
         return jsonify({'success': False, 'message': '订单状态不正确'}), 400
-    
+
     try:
         alipay = get_alipay_sdk()
-        
-        # 创建授权
-        out_order_no = f"AUTH_{order.order_no}"
-        out_request_no = generate_out_request_no()
-        
-        result = alipay.alipay_fund_auth_order_freeze(
-            out_order_no=out_order_no,
-            out_request_no=out_request_no,
-            amount=float(order.device.deposit_amount),  # 授权金额为押金金额
-            order_title=f"押金授权-{order.device.name}",
-            buyer_id=customer.alipay_user_id,
-            notify_url=f"{current_app.config['NOTIFY_URL']}/auth"
+        service_id = current_app.config.get('ZHIMA_SERVICE_ID', '')
+        category = current_app.config.get('ZHIMA_CATEGORY', '')
+        deposit_product_mode = current_app.config.get('DEPOSIT_PRODUCT_MODE', 'DEPOSIT_ONLY')
+
+        # 步骤3：创建芝麻信用借还订单
+        borrow_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        expiry_time = order.end_date.strftime('%Y-%m-%d %H:%M:%S')
+        rent_result = alipay.zhima_merchant_order_rent_create(
+            out_order_no=order.order_no,
+            user_id=customer.alipay_user_id,
+            service_id=service_id,
+            borrow_time=borrow_time,
+            expiry_time=expiry_time,
+            deposit_amount=float(order.device.deposit_amount),
+            rent_amount=float(order.rental_amount),
+            goods_name=order.device.name
         )
-        
-        if result.get('success'):
-            auth_data = result['data']
-            
-            # 更新订单授权信息
-            order.auth_no = auth_data.get('auth_no')
-            order.auth_time = datetime.now()
-            order.auth_amount = order.device.deposit_amount
-            db.session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': '授权申请已提交',
-                'data': {
-                    'auth_no': order.auth_no,
-                    'auth_amount': float(order.auth_amount)
-                }
-            })
-        else:
+
+        if not rent_result.get('success'):
             return jsonify({
                 'success': False,
-                'message': f"授权失败: {result.get('message', '未知错误')}"
+                'message': f"创建借还订单失败: {rent_result.get('message', '未知错误')}"
             }), 400
-            
+
+        zhima_order_no = rent_result['data'].get('order_no')
+
+        # 步骤4：发起资金授权冻结
+        out_order_no = f"AUTH_{order.order_no}"
+        out_request_no = generate_out_request_no()
+
+        freeze_result = alipay.alipay_fund_auth_order_app_freeze(
+            out_order_no=out_order_no,
+            out_request_no=out_request_no,
+            amount=float(order.device.deposit_amount),
+            order_title=f"押金授权-{order.device.name}",
+            deposit_product_mode=deposit_product_mode,
+            service_id=service_id,
+            category=category,
+            notify_url=f"{current_app.config['NOTIFY_URL']}/auth"
+        )
+
+        if not freeze_result.get('success'):
+            return jsonify({
+                'success': False,
+                'message': f"创建冻结单失败: {freeze_result.get('message', '未知错误')}"
+            }), 400
+
+        order_str = freeze_result['data'].get('orderStr')
+
+        # 保存芝麻订单号和授权信息
+        order.zhima_order_no = zhima_order_no
+        order.auth_time = datetime.now()
+        order.auth_amount = order.device.deposit_amount
+        db.session.commit()
+
+        # 同步信用数据：借出
+        alipay.zhima_merchant_single_data_upload(
+            order_no=zhima_order_no,
+            borrow_time=borrow_time,
+            user_id=customer.alipay_user_id,
+            goods_name=order.device.name,
+            status='BORROW'
+        )
+
+        return jsonify({
+            'success': True,
+            'message': '授权单创建成功，请唤起受理台',
+            'data': {
+                'orderStr': order_str,
+                'zhima_order_no': zhima_order_no,
+                'auth_amount': float(order.auth_amount)
+            }
+        })
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Deposit free auth error: {e}")
@@ -392,6 +430,88 @@ def unfreeze_deposit(order_id):
         return jsonify({'success': False, 'message': f'解冻失败: {str(e)}'}), 500
 
 
+@orders_bp.route('/<int:order_id>/complete', methods=['POST'])
+@login_required
+def complete_order(order_id):
+    """
+    订单完结（步骤8）
+    用户归还设备后调用，触发代扣租金 + 芝麻信用闭环
+    {
+        "pay_amount": 100.00,        // 实际扣款金额（租金/赔偿金）
+        "pay_amount_type": "RENT"    // RENT-租金, DAMAGE-赔偿金，默认 RENT
+    }
+    """
+    customer = request.customer
+    order = Order.query.get(order_id)
+
+    if not order:
+        return jsonify({'success': False, 'message': '订单不存在'}), 404
+
+    if order.customer_id != customer.id:
+        return jsonify({'success': False, 'message': '无权操作该订单'}), 403
+
+    if not order.deposit_free or not order.zhima_order_no:
+        return jsonify({'success': False, 'message': '该订单不是免押订单或未完成授权'}), 400
+
+    if order.complete_status == 'SUCCESS':
+        return jsonify({'success': False, 'message': '订单已完结'}), 400
+
+    data = request.get_json() or {}
+    pay_amount = data.get('pay_amount', float(order.rental_amount))
+    pay_amount_type = data.get('pay_amount_type', 'RENT')
+
+    try:
+        alipay = get_alipay_sdk()
+        restore_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        result = alipay.zhima_merchant_order_rent_complete(
+            order_no=order.zhima_order_no,
+            pay_amount=pay_amount,
+            restore_time=restore_time,
+            pay_amount_type=pay_amount_type
+        )
+
+        if not result.get('success'):
+            return jsonify({
+                'success': False,
+                'message': f"完结失败: {result.get('message', '未知错误')}"
+            }), 400
+
+        order.complete_status = 'SUCCESS'
+        order.complete_time = datetime.now()
+        order.actual_pay_amount = pay_amount
+        order.status = 'completed'
+
+        # 归还设备
+        order.device.status = 'available'
+        db.session.commit()
+
+        # 同步信用数据：归还
+        alipay.zhima_merchant_single_data_upload(
+            order_no=order.zhima_order_no,
+            borrow_time=order.start_date.strftime('%Y-%m-%d %H:%M:%S'),
+            user_id=customer.alipay_user_id,
+            goods_name=order.device.name,
+            status='RETURN',
+            restore_time=restore_time
+        )
+
+        return jsonify({
+            'success': True,
+            'message': '订单完结成功',
+            'data': {
+                'order_no': order.order_no,
+                'actual_pay_amount': float(pay_amount)
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Complete order error: {e}")
+        return jsonify({'success': False, 'message': f'完结失败: {str(e)}'}), 500
+
+
+
 @orders_bp.route('/<int:order_id>/cancel', methods=['POST'])
 @login_required
 def cancel_order(order_id):
@@ -409,10 +529,17 @@ def cancel_order(order_id):
         return jsonify({'success': False, 'message': '只能取消待支付订单'}), 400
     
     try:
-        # 如果已创建授权，需要取消授权
-        if order.auth_no:
-            # TODO: 调用取消授权接口
-            pass
+        # 如果已创建芝麻借还订单，需要取消
+        if order.zhima_order_no:
+            alipay = get_alipay_sdk()
+            cancel_result = alipay.zhima_merchant_order_rent_cancel(
+                order_no=order.zhima_order_no,
+                out_order_no=order.order_no
+            )
+            if not cancel_result.get('success'):
+                current_app.logger.warning(
+                    f"Cancel zhima order failed: {cancel_result.get('message')}"
+                )
         
         # 释放设备
         device = order.device
@@ -509,25 +636,33 @@ def alipay_notify_auth():
         # 处理授权结果
         notify_type = data.get('notify_type')
         auth_no = data.get('auth_no')
-        
-        # 查找订单
-        order = Order.query.filter_by(auth_no=auth_no).first()
-        
+        out_order_no = data.get('out_order_no', '')  # 格式为 AUTH_{order_no}
+
+        # 通过 out_order_no 查找订单（auth_no 是通知回来才有的，不能用于查找）
+        order_no = out_order_no.replace('AUTH_', '', 1) if out_order_no.startswith('AUTH_') else ''
+        order = Order.query.filter_by(order_no=order_no).first() if order_no else None
+
         if not order:
-            current_app.logger.error(f"Order not found for auth: {auth_no}")
+            current_app.logger.error(f"Order not found for auth notify: out_order_no={out_order_no}")
             return 'fail'
-        
+
         # 更新授权状态
         if notify_type == 'alipay.fund.auth.freeze':
             status = data.get('status')
             if status == 'SUCCESS':
-                current_app.logger.info(f"Auth {auth_no} frozen successfully")
+                # 保存 auth_no，并将订单状态推进为租赁中
+                order.auth_no = auth_no
+                if not order.auth_time:
+                    order.auth_time = datetime.now()
+                order.status = 'active'
+                db.session.commit()
+                current_app.logger.info(f"Auth {auth_no} frozen successfully, order {order_no} activated")
             elif status == 'CLOSED':
                 order.auth_no = None
                 order.auth_time = None
                 order.auth_amount = None
                 db.session.commit()
-                current_app.logger.info(f"Auth {auth_no} closed")
+                current_app.logger.info(f"Auth for order {order_no} closed")
         
         return 'success'
         

@@ -31,9 +31,10 @@ class Config:
     MINIPROGRAM_APP_ID = os.getenv('MINIPROGRAM_APP_ID', '')
     MINIPROGRAM_APP_SECRET = os.getenv('MINIPROGRAM_APP_SECRET', '')
     
-    # 免押配置
-    DEPOSIT_FREE_PRODUCT_CODE = os.getenv('DEPOSIT_FREE_PRODUCT_CODE', 'PRE_AUTH_ONLINE')  # 资金授权产品码
-    DEPOSIT_FREE_SCENE_CODE = os.getenv('DEPOSIT_FREE_SCENE_CODE', 'SCENE_ONLINE_RENT')   # 授权场景码
+    # 芝麻免押配置
+    ZHIMA_SERVICE_ID = os.getenv('ZHIMA_SERVICE_ID', '')        # 芝麻信用服务ID（后台创建后获取）
+    ZHIMA_CATEGORY = os.getenv('ZHIMA_CATEGORY', '')            # 业务类目（后台配置的类目编码）
+    DEPOSIT_PRODUCT_MODE = os.getenv('DEPOSIT_PRODUCT_MODE', 'DEPOSIT_ONLY')  # 免押模式：DEPOSIT_ONLY/POSTPAY/POSTPAY_UNCERTAIN
     
     # 通知回调配置
     NOTIFY_URL = os.getenv('NOTIFY_URL', 'https://your-domain.com/api/orders/notify')
